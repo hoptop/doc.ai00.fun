@@ -59,15 +59,43 @@ username2 password2
 npm run import:accounts
 ```
 
-### 5. 同步课程内容
+### 5. 配置 Supabase Storage (图片/附件托管)
 
-将 Markdown 文件放入 `notebook/` 目录，然后:
+1. 登录 [Supabase Dashboard](https://app.supabase.com)
+2. 进入你的项目 > **Storage**
+3. 点击 **New bucket**
+4. 创建 bucket:
+   - **Name**: `course-assets`
+   - **Public bucket**: ✅ 勾选
+5. 点击 **Create bucket**
 
+> 💡 bucket 名称可自定义，需与 `.env.local` 中的 `SUPABASE_STORAGE_BUCKET` 一致
+
+### 6. 同步课程内容
+
+将 Markdown 文件放入 `notebook/` 目录:
+- Markdown 文件直接放在 `notebook/` 或其子目录下
+- 图片放入 `notebook/image/`
+- 附件放入 `notebook/file/`
+
+配置 `.env.local`:
+```
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key_here
+SUPABASE_STORAGE_BUCKET=course-assets
+```
+
+运行同步脚本:
 ```bash
 npm run sync:markdown
 ```
 
-### 6. 部署到 GitHub Pages
+同步脚本会自动:
+1. 扫描所有 Markdown 文件
+2. 上传引用的图片和附件到 Supabase Storage
+3. 将 Markdown 中的 `image/xxx.png` 替换为公开 URL
+4. 将处理后的内容写入 `course_pages` 表
+
+### 7. 部署到 GitHub Pages
 
 1. 将代码推送到 GitHub
 2. 在仓库 Settings > Pages 中启用 GitHub Actions 部署
@@ -95,6 +123,7 @@ npm run sync:markdown
 | 变量 | 用途 | 位置 |
 |------|------|------|
 | `SUPABASE_SERVICE_ROLE_KEY` | 本地脚本使用的管理员密钥 | `.env.local` |
+| `SUPABASE_STORAGE_BUCKET` | Storage bucket 名称 (默认 `course-assets`) | `.env.local` |
 
 > ⚠️ Service Role Key 拥有完整数据库权限，切勿提交到 Git！
 
