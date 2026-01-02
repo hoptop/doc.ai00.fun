@@ -1,18 +1,18 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = 'https://jwzriogbwnvbigbpzysc.supabase.co'
-const supabaseAnonKey = 'sb_publishable_L2Hb_V8AgSfOLdNLRJDY9w_UWezlHzz'
+const supabaseUrl = 'https://lohrzoxpussniseyctjb.supabase.co'
+const supabaseAnonKey = 'sb_publishable_TZH3u1x0s-eExyNNJqs3xQ_d8Pp2rFu'
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
 // 将用户名映射为伪邮箱
 export const usernameToEmail = (username: string): string => {
-  return `${username.toLowerCase().trim()}@local.invalid`
+  return `${username.toLowerCase().trim()}@gzdlab.com`
 }
 
 // 从伪邮箱提取用户名
 export const emailToUsername = (email: string): string => {
-  return email.replace('@local.invalid', '')
+  return email.replace('@gzdlab.com', '')
 }
 
 // 类型定义

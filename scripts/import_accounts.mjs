@@ -43,7 +43,7 @@ const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
 
 // 将用户名映射为伪邮箱
 const usernameToEmail = (username) => {
-  return `${username.toLowerCase().trim()}@local.invalid`
+  return `${username.toLowerCase().trim()}@gzdlab.com`
 }
 
 // 解析 account.txt
