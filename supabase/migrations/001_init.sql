@@ -53,6 +53,15 @@ CREATE TRIGGER on_auth_user_created
 
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
+-- 辅助函数：检查当前用户是否是管理员（避免无限递归）
+CREATE OR REPLACE FUNCTION public.is_admin()
+RETURNS BOOLEAN AS $$
+  SELECT COALESCE(
+    (SELECT is_admin FROM public.profiles WHERE id = auth.uid()),
+    FALSE
+  );
+$$ LANGUAGE sql SECURITY DEFINER STABLE;
+
 -- 用户可以读取自己的 profile
 CREATE POLICY "Users can view own profile"
   ON public.profiles
@@ -65,27 +74,17 @@ CREATE POLICY "Users can insert own profile"
   FOR INSERT
   WITH CHECK (auth.uid() = id);
 
--- 管理员可以读取所有 profiles
+-- 管理员可以读取所有 profiles（使用函数避免递归）
 CREATE POLICY "Admins can view all profiles"
   ON public.profiles
   FOR SELECT
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.profiles
-      WHERE id = auth.uid() AND is_admin = TRUE
-    )
-  );
+  USING (public.is_admin());
 
 -- 管理员可以更新任何 profile（用于激活用户）
 CREATE POLICY "Admins can update profiles"
   ON public.profiles
   FOR UPDATE
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.profiles
-      WHERE id = auth.uid() AND is_admin = TRUE
-    )
-  );
+  USING (public.is_admin());
 
 -- ============================================
 -- RLS 策略：course_pages
@@ -93,27 +92,26 @@ CREATE POLICY "Admins can update profiles"
 
 ALTER TABLE public.course_pages ENABLE ROW LEVEL SECURITY;
 
+-- 辅助函数：检查当前用户是否已激活
+CREATE OR REPLACE FUNCTION public.is_active()
+RETURNS BOOLEAN AS $$
+  SELECT COALESCE(
+    (SELECT is_active FROM public.profiles WHERE id = auth.uid()),
+    FALSE
+  );
+$$ LANGUAGE sql SECURITY DEFINER STABLE;
+
 -- 只有已激活用户可以读取课程内容
 CREATE POLICY "Active users can view courses"
   ON public.course_pages
   FOR SELECT
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.profiles
-      WHERE id = auth.uid() AND is_active = TRUE
-    )
-  );
+  USING (public.is_active());
 
 -- 管理员可以插入/更新/删除课程
 CREATE POLICY "Admins can manage courses"
   ON public.course_pages
   FOR ALL
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.profiles
-      WHERE id = auth.uid() AND is_admin = TRUE
-    )
-  );
+  USING (public.is_admin());
 
 -- ============================================
 -- 索引
