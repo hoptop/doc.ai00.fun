@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom'
-import { supabase, Profile } from './lib/supabase'
+import { supabase, Profile, emailToUsername } from './lib/supabase'
 import { Session } from '@supabase/supabase-js'
 import Login from './pages/Login'
 import Signup from './pages/Signup'
@@ -13,6 +13,7 @@ function App() {
   const [session, setSession] = useState<Session | null>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const navigate = useNavigate()
   const location = useLocation()
 
@@ -30,7 +31,7 @@ function App() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
       if (session) {
-        fetchProfile(session.user.id)
+        fetchProfile(session)
       } else {
         setLoading(false)
       }
@@ -41,7 +42,7 @@ function App() {
       async (_event, session) => {
         setSession(session)
         if (session) {
-          await fetchProfile(session.user.id)
+          await fetchProfile(session)
         } else {
           setProfile(null)
           setLoading(false)
@@ -52,18 +53,54 @@ function App() {
     return () => subscription.unsubscribe()
   }, [])
 
-  const fetchProfile = async (userId: string) => {
+  const fetchProfile = async (currentSession: Session) => {
+    const userId = currentSession.user.id
+    const userEmail = currentSession.user.email || ''
+    
     try {
+      // 尝试获取 profile
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
         .single()
 
-      if (error) throw error
-      setProfile(data)
-    } catch (error) {
-      console.error('Error fetching profile:', error)
+      if (error) {
+        // 如果是 "没有找到记录" 的错误，尝试创建 profile
+        if (error.code === 'PGRST116') {
+          console.log('Profile not found, creating...')
+          const username = currentSession.user.user_metadata?.username || emailToUsername(userEmail)
+          
+          const { data: newProfile, error: insertError } = await supabase
+            .from('profiles')
+            .insert({
+              id: userId,
+              username: username,
+              is_active: false,
+              is_admin: false
+            })
+            .select()
+            .single()
+
+          if (insertError) {
+            console.error('Error creating profile:', insertError)
+            setError(`创建用户资料失败: ${insertError.message}`)
+            setProfile(null)
+          } else {
+            setProfile(newProfile)
+          }
+        } else {
+          console.error('Error fetching profile:', error)
+          setError(`获取用户资料失败: ${error.message}`)
+          setProfile(null)
+        }
+      } else {
+        setProfile(data)
+        setError(null)
+      }
+    } catch (err) {
+      console.error('Unexpected error:', err)
+      setError('发生未知错误')
       setProfile(null)
     } finally {
       setLoading(false)
@@ -82,6 +119,32 @@ function App() {
       <div className="loading-screen">
         <div className="loading-spinner"></div>
         <p>加载中...</p>
+      </div>
+    )
+  }
+
+  // 显示错误状态
+  if (error && session) {
+    return (
+      <div className="loading-screen">
+        <p style={{ color: '#ef4444', marginBottom: '1rem' }}>{error}</p>
+        <p style={{ color: '#94a3b8', fontSize: '0.9rem', marginBottom: '1rem' }}>
+          请检查 Supabase 数据库配置是否正确
+        </p>
+        <button 
+          onClick={handleLogout}
+          style={{
+            padding: '0.75rem 1.5rem',
+            background: '#00f0ff',
+            color: '#0a0e17',
+            border: 'none',
+            borderRadius: '8px',
+            cursor: 'pointer',
+            fontWeight: 500
+          }}
+        >
+          退出登录
+        </button>
       </div>
     )
   }

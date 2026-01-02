@@ -59,6 +59,12 @@ CREATE POLICY "Users can view own profile"
   FOR SELECT
   USING (auth.uid() = id);
 
+-- 用户可以插入自己的 profile（备用，如果触发器失败）
+CREATE POLICY "Users can insert own profile"
+  ON public.profiles
+  FOR INSERT
+  WITH CHECK (auth.uid() = id);
+
 -- 管理员可以读取所有 profiles
 CREATE POLICY "Admins can view all profiles"
   ON public.profiles
