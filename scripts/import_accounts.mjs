@@ -24,7 +24,7 @@ const rootDir = resolve(__dirname, '..')
 // 加载环境变量
 config({ path: resolve(rootDir, '.env.local') })
 
-const SUPABASE_URL = 'https://jwzriogbwnvbigbpzysc.supabase.co'
+const SUPABASE_URL = 'https://lohrzoxpussniseyctjb.supabase.co'
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
 
 if (!SERVICE_ROLE_KEY) {

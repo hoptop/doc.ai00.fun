@@ -20,16 +20,29 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 const rootDir = resolve(__dirname, '..')
 
 // 加载环境变量
-config({ path: resolve(rootDir, '.env.local') })
+const envPath = resolve(rootDir, '.env.local')
+config({ path: envPath })
 
-const SUPABASE_URL = 'https://jwzriogbwnvbigbpzysc.supabase.co'
+const SUPABASE_URL = 'https://lohrzoxpussniseyctjb.supabase.co'
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+// 显示环境变量信息
+console.log('📋 环境变量配置:')
+console.log(`   📁 环境文件: ${envPath}`)
+console.log(`   🌐 Supabase URL: ${SUPABASE_URL}`)
 
 if (!SERVICE_ROLE_KEY) {
   console.error('❌ 错误: 请在 .env.local 中设置 SUPABASE_SERVICE_ROLE_KEY')
   console.error('   可以在 Supabase 项目设置 > API > service_role 中找到')
   process.exit(1)
 }
+
+// 显示密钥的部分内容以便确认（显示前8个和后8个字符）
+const keyPreview = SERVICE_ROLE_KEY.length > 16 
+  ? `${SERVICE_ROLE_KEY.substring(0, 8)}...${SERVICE_ROLE_KEY.substring(SERVICE_ROLE_KEY.length - 8)}`
+  : `${SERVICE_ROLE_KEY.substring(0, 4)}...${SERVICE_ROLE_KEY.substring(SERVICE_ROLE_KEY.length - 4)}`
+console.log(`   🔑 Service Role Key: ${keyPreview} (长度: ${SERVICE_ROLE_KEY.length})`)
+console.log('')
 
 // 使用 Service Role Key 创建管理员客户端
 const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
